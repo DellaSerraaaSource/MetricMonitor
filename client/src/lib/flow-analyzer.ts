@@ -1,9 +1,23 @@
 import type { FlowData, FlowState, FlowAction, FlowOutput } from "@shared/schema";
 
+// Compatibility interface for normalized state structure
+export interface NormalizedFlowState {
+  $id: string;
+  $title?: string;
+  $position?: { x: number; y: number };
+  $tags?: string[];
+  is_root?: boolean;
+  enteringCustomActions?: FlowAction[];
+  actions?: FlowAction[];
+  leavingCustomActions?: FlowAction[];
+  outputs?: FlowOutput[];
+  defaultOutput?: FlowOutput;
+}
+
 export interface FlowMetrics {
   totalStates: number;
-  rootStates: FlowState[];
-  orphanStates: FlowState[];
+  rootStates: NormalizedFlowState[];
+  orphanStates: NormalizedFlowState[];
   actionsByType: Map<string, FlowAction[]>;
   stateConnections: Map<string, string[]>;
   variableUsage: Map<string, { defined: string[], used: string[] }>;
@@ -21,42 +35,69 @@ export interface RiskFactor {
 
 export class FlowAnalyzer {
   private flowData: FlowData;
+  private normalizedStates: NormalizedFlowState[];
   
   constructor(flowData: FlowData) {
     this.flowData = flowData;
+    this.normalizedStates = this.normalizeFlowData(flowData);
+  }
+
+  /**
+   * Normalizes flow data to work with both old and new formats
+   */
+  private normalizeFlowData(flowData: FlowData): NormalizedFlowState[] {
+    // Check if it's the new format with flow object
+    if ((flowData as any).flow) {
+      const flowStates = (flowData as any).flow;
+      const stateIds = Object.keys(flowStates);
+      
+      return stateIds.map(stateId => ({
+        $id: stateId,
+        $title: flowStates[stateId].$title,
+        $position: flowStates[stateId].$position,
+        $tags: flowStates[stateId].$tags,
+        is_root: stateId === 'onboarding' || stateId.includes('inicio') || stateId.includes('start'),
+        enteringCustomActions: flowStates[stateId].$enteringCustomActions || [],
+        actions: flowStates[stateId].$contentActions || [],
+        leavingCustomActions: flowStates[stateId].$leavingCustomActions || [],
+        outputs: flowStates[stateId].$conditionOutputs || [],
+        defaultOutput: flowStates[stateId].$defaultOutput,
+      }));
+    }
+    
+    // Fallback for old format (if states array exists)
+    return (flowData as any).states || [];
   }
 
   /**
    * Performs comprehensive analysis of the flow
    */
   public analyze(): FlowMetrics {
-    const states = this.flowData.states;
-    
     return {
-      totalStates: states.length,
-      rootStates: this.findRootStates(states),
-      orphanStates: this.findOrphanStates(states),
-      actionsByType: this.categorizeActions(states),
-      stateConnections: this.buildConnectionMap(states),
-      variableUsage: this.analyzeVariableUsage(states),
-      endpoints: this.extractEndpoints(states),
-      riskFactors: this.identifyRiskFactors(states),
+      totalStates: this.normalizedStates.length,
+      rootStates: this.findRootStates(),
+      orphanStates: this.findOrphanStates(),
+      actionsByType: this.categorizeActions(),
+      stateConnections: this.buildConnectionMap(),
+      variableUsage: this.analyzeVariableUsage(),
+      endpoints: this.extractEndpoints(),
+      riskFactors: this.identifyRiskFactors(),
     };
   }
 
   /**
    * Finds states marked as root or entry points
    */
-  private findRootStates(states: FlowState[]): FlowState[] {
-    return states.filter(state => state.is_root === true);
+  private findRootStates(): NormalizedFlowState[] {
+    return this.normalizedStates.filter(state => state.is_root === true);
   }
 
   /**
    * Identifies unreachable states (orphan states)
    */
-  private findOrphanStates(states: FlowState[]): FlowState[] {
+  private findOrphanStates(): NormalizedFlowState[] {
     const reachableStates = new Set<string>();
-    const rootStates = this.findRootStates(states);
+    const rootStates = this.findRootStates();
     
     // BFS to find all reachable states
     const queue = [...rootStates.map(state => state.$id)];
@@ -67,7 +108,7 @@ export class FlowAnalyzer {
       
       reachableStates.add(currentStateId);
       
-      const currentState = states.find(state => state.$id === currentStateId);
+      const currentState = this.normalizedStates.find(state => state.$id === currentStateId);
       if (currentState) {
         // Add outputs
         const outputs = currentState.outputs || [];
@@ -84,16 +125,16 @@ export class FlowAnalyzer {
       }
     }
     
-    return states.filter(state => !reachableStates.has(state.$id));
+    return this.normalizedStates.filter(state => !reachableStates.has(state.$id));
   }
 
   /**
    * Categorizes all actions by type
    */
-  private categorizeActions(states: FlowState[]): Map<string, FlowAction[]> {
+  private categorizeActions(): Map<string, FlowAction[]> {
     const actionsByType = new Map<string, FlowAction[]>();
     
-    states.forEach(state => {
+    this.normalizedStates.forEach(state => {
       const allActions = [
         ...(state.enteringCustomActions || []),
         ...(state.actions || []),
@@ -118,10 +159,10 @@ export class FlowAnalyzer {
   /**
    * Builds a map of state connections
    */
-  private buildConnectionMap(states: FlowState[]): Map<string, string[]> {
+  private buildConnectionMap(): Map<string, string[]> {
     const connections = new Map<string, string[]>();
     
-    states.forEach(state => {
+    this.normalizedStates.forEach(state => {
       const stateConnections: string[] = [];
       
       // Add outputs
@@ -146,7 +187,7 @@ export class FlowAnalyzer {
   /**
    * Analyzes variable definition and usage patterns
    */
-  private analyzeVariableUsage(states: FlowState[]): Map<string, { defined: string[], used: string[] }> {
+  private analyzeVariableUsage(): Map<string, { defined: string[], used: string[] }> {
     const variableUsage = new Map<string, { defined: string[], used: string[] }>();
     
     const getVariableEntry = (varName: string) => {
@@ -156,7 +197,7 @@ export class FlowAnalyzer {
       return variableUsage.get(varName)!;
     };
     
-    states.forEach(state => {
+    this.normalizedStates.forEach(state => {
       const allActions = [
         ...(state.enteringCustomActions || []),
         ...(state.actions || []),
@@ -206,10 +247,10 @@ export class FlowAnalyzer {
   /**
    * Extracts unique API endpoints
    */
-  private extractEndpoints(states: FlowState[]): Set<string> {
+  private extractEndpoints(): Set<string> {
     const endpoints = new Set<string>();
     
-    states.forEach(state => {
+    this.normalizedStates.forEach(state => {
       const allActions = [
         ...(state.enteringCustomActions || []),
         ...(state.actions || []),
@@ -229,10 +270,10 @@ export class FlowAnalyzer {
   /**
    * Identifies potential risk factors in the flow
    */
-  private identifyRiskFactors(states: FlowState[]): RiskFactor[] {
+  private identifyRiskFactors(): RiskFactor[] {
     const risks: RiskFactor[] = [];
     
-    states.forEach(state => {
+    this.normalizedStates.forEach(state => {
       const allActions = [
         ...(state.enteringCustomActions || []),
         ...(state.actions || []),
@@ -297,7 +338,7 @@ export class FlowAnalyzer {
     });
     
     // Dead code detection
-    const orphans = this.findOrphanStates(states);
+    const orphans = this.findOrphanStates();
     orphans.forEach(state => {
       risks.push({
         type: "dead_code",
@@ -315,11 +356,10 @@ export class FlowAnalyzer {
    * Calculates flow complexity based on structure
    */
   public calculateComplexity(): number {
-    const states = this.flowData.states;
-    const stateCount = states.length;
+    const stateCount = this.normalizedStates.length;
     
     // Calculate average conditions per state
-    const totalConditions = states.reduce((sum, state) => {
+    const totalConditions = this.normalizedStates.reduce((sum, state) => {
       const outputs = state.outputs || [];
       return sum + outputs.reduce((cSum, output) => {
         return cSum + (output.conditions?.length || 0);
@@ -329,7 +369,7 @@ export class FlowAnalyzer {
     const avgConditions = totalConditions / Math.max(1, stateCount);
     
     // Calculate custom actions rate
-    const statesWithCustomActions = states.filter(state => {
+    const statesWithCustomActions = this.normalizedStates.filter(state => {
       const hasCustomActions = (state.enteringCustomActions?.length || 0) + 
                               (state.leavingCustomActions?.length || 0) > 0;
       return hasCustomActions;

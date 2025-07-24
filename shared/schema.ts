@@ -19,46 +19,51 @@ export const insertFlowAnalysisSchema = createInsertSchema(flowAnalyses).omit({
 export type InsertFlowAnalysis = z.infer<typeof insertFlowAnalysisSchema>;
 export type FlowAnalysis = typeof flowAnalyses.$inferSelect;
 
-// Flow structure types
+// Flow structure types - Updated to match actual Blip format
 export const FlowActionSchema = z.object({
   $id: z.string().optional(),
   $title: z.string().optional(),
+  $typeOfContent: z.string().optional(),
   type: z.string(),
   settings: z.record(z.any()).optional(),
   inputVariables: z.array(z.string()).optional(),
   outputVariable: z.string().optional(),
+  conditions: z.array(z.any()).optional(),
+  $invalid: z.boolean().optional(),
+  input: z.record(z.any()).optional(),
+  $cardContent: z.record(z.any()).optional(),
 });
 
 export const FlowConditionSchema = z.object({
   source: z.string(),
-  variable: z.string(),
+  variable: z.string().optional(),
   comparison: z.string(),
   values: z.array(z.any()),
 });
 
 export const FlowOutputSchema = z.object({
   stateId: z.string(),
+  typeOfStateId: z.string().optional(),
+  $connId: z.string().optional(),
+  $id: z.string().optional(),
   conditions: z.array(FlowConditionSchema).optional(),
+  $isBuilderDefaultOutput: z.boolean().optional(),
+  $invalid: z.boolean().optional(),
 });
 
 export const FlowStateSchema = z.object({
-  $id: z.string(),
-  $title: z.string().optional(),
-  $position: z.object({
-    x: z.number(),
-    y: z.number(),
-  }).optional(),
+  $contentActions: z.array(FlowActionSchema).optional(),
+  $conditionOutputs: z.array(FlowOutputSchema).optional(),
+  $enteringCustomActions: z.array(FlowActionSchema).optional(),
+  $leavingCustomActions: z.array(FlowActionSchema).optional(),
+  $defaultOutput: FlowOutputSchema.optional(),
   $tags: z.array(z.string()).optional(),
-  is_root: z.boolean().optional(),
-  enteringCustomActions: z.array(FlowActionSchema).optional(),
-  actions: z.array(FlowActionSchema).optional(),
-  leavingCustomActions: z.array(FlowActionSchema).optional(),
-  outputs: z.array(FlowOutputSchema).optional(),
-  defaultOutput: FlowOutputSchema.optional(),
+  $position: z.record(z.any()).optional(),
+  $invalid: z.boolean().optional(),
 });
 
 export const FlowDataSchema = z.object({
-  states: z.array(FlowStateSchema),
+  flow: z.record(FlowStateSchema),
 });
 
 export type FlowAction = z.infer<typeof FlowActionSchema>;

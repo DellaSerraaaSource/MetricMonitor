@@ -103,7 +103,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 // KPI Calculation Function
 function calculateKPIs(flowData: any) {
-  const states = flowData.states || [];
+  // Convert flow object to states array for compatibility
+  const flowStates = flowData.flow || {};
+  const stateIds = Object.keys(flowStates);
+  const states = stateIds.map(stateId => ({
+    $id: stateId,
+    ...(flowStates[stateId] || {}),
+    // Map content actions to actions for compatibility
+    actions: flowStates[stateId].$contentActions || [],
+    // Map condition outputs to outputs
+    outputs: flowStates[stateId].$conditionOutputs || [],
+    // Map custom actions
+    enteringCustomActions: flowStates[stateId].$enteringCustomActions || [],
+    leavingCustomActions: flowStates[stateId].$leavingCustomActions || [],
+    // Check if root state (simplified - would need flow analysis)
+    is_root: stateId === 'onboarding' || stateId.includes('inicio') || stateId.includes('start')
+  }));
+  
   const totalStates = states.length;
   
   if (totalStates === 0) {
@@ -120,7 +136,7 @@ function calculateKPIs(flowData: any) {
         ...(state.leavingCustomActions || [])
       ];
       
-      allStateActions.forEach(action => {
+      allStateActions.forEach((action: any) => {
         if (!type || action.type === type) {
           actions.push({ ...action, stateId: state.$id });
         }
@@ -215,7 +231,7 @@ function calculateComplexityIndex(states: any[]): number {
   const stateCount = states.length;
   const avgConditions = states.reduce((sum, state) => {
     const outputs = state.outputs || [];
-    const conditions = outputs.reduce((cSum, output) => cSum + (output.conditions?.length || 0), 0);
+    const conditions = outputs.reduce((cSum: number, output: any) => cSum + (output.conditions?.length || 0), 0);
     return sum + conditions;
   }, 0) / Math.max(1, stateCount);
   
@@ -288,7 +304,7 @@ function findOrphanStates(states: any[]): any[] {
     const currentState = states.find(state => state.$id === currentStateId);
     if (currentState) {
       const outputs = currentState.outputs || [];
-      outputs.forEach(output => {
+      outputs.forEach((output: any) => {
         if (output.stateId && !reachableStates.has(output.stateId)) {
           queue.push(output.stateId);
         }

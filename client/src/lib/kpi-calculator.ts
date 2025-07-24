@@ -1,5 +1,5 @@
 import type { FlowData, FlowState, FlowAction } from "@shared/schema";
-import { createFlowAnalyzer, type FlowMetrics } from "./flow-analyzer";
+import { FlowAnalyzer, type FlowMetrics, type NormalizedFlowState } from "./flow-analyzer";
 
 export interface KPIResults {
   // Global KPIs
@@ -66,11 +66,12 @@ interface VariableActionMetrics {
 export class KPICalculator {
   private flowData: FlowData;
   private metrics: FlowMetrics;
+  private analyzer: FlowAnalyzer;
   
   constructor(flowData: FlowData) {
     this.flowData = flowData;
-    const analyzer = createFlowAnalyzer(flowData);
-    this.metrics = analyzer.analyze();
+    this.analyzer = new FlowAnalyzer(flowData);
+    this.metrics = this.analyzer.analyze();
   }
 
   /**
@@ -105,83 +106,45 @@ export class KPICalculator {
    * Flow Health Score: 1 - (Invalid Components / Total Components)
    */
   private calculateHealthScore(): number {
-    const states = this.flowData.states;
-    const totalComponents = states.length;
+    const totalComponents = this.metrics.totalStates;
     
     if (totalComponents === 0) return 0;
     
-    const invalidComponents = states.filter(state => 
-      !state.$id || state.$id.trim() === ''
+    const invalidComponents = this.metrics.riskFactors.filter(risk => 
+      risk.type === 'dead_code' || risk.severity === 'high'
     ).length;
     
-    return Math.max(0, Math.min(1, 1 - (invalidComponents / totalComponents)));
+    return Math.max(0, Math.min(100, 100 - ((invalidComponents / totalComponents) * 100)));
   }
 
   /**
    * Flow Complexity Index: Weighted score based on structure
    */
   private calculateComplexityIndex(): number {
-    const states = this.flowData.states;
-    const stateCount = states.length;
-    
-    if (stateCount === 0) return 0;
-    
-    // Average conditions per state
-    const totalConditions = states.reduce((sum, state) => {
-      const outputs = state.outputs || [];
-      return sum + outputs.reduce((cSum, output) => 
-        cSum + (output.conditions?.length || 0), 0
-      );
-    }, 0);
-    const avgConditions = totalConditions / stateCount;
-    
-    // Custom actions rate
-    const statesWithCustomActions = states.filter(state => {
-      const hasCustomActions = (state.enteringCustomActions?.length || 0) + 
-                              (state.leavingCustomActions?.length || 0) > 0;
-      return hasCustomActions;
-    }).length;
-    const customActionsRate = statesWithCustomActions / stateCount;
-    
-    return Math.min(10, (stateCount * 0.4) + (avgConditions * 0.3) + (customActionsRate * 10 * 0.3));
+    return this.analyzer.calculateComplexity();
   }
 
   /**
-   * External Dependency Index: Percentage of states with external dependencies
+   * External Dependency Index
    */
   private calculateExternalDependencyIndex(): number {
-    const states = this.flowData.states;
-    if (states.length === 0) return 0;
+    const httpActions = this.metrics.actionsByType.get("ProcessHttp") || [];
+    const scriptActions = this.metrics.actionsByType.get("ExecuteScript") || [];
+    const totalActions = Array.from(this.metrics.actionsByType.values()).reduce(
+      (sum, actions) => sum + actions.length, 0
+    );
     
-    const statesWithExternalDeps = new Set<string>();
-    
-    states.forEach(state => {
-      const allActions = [
-        ...(state.enteringCustomActions || []),
-        ...(state.actions || []),
-        ...(state.leavingCustomActions || [])
-      ];
-      
-      const hasExternalDep = allActions.some(action => 
-        action.type === "ProcessHttp" || action.type === "ExecuteScript"
-      );
-      
-      if (hasExternalDep) {
-        statesWithExternalDeps.add(state.$id);
-      }
-    });
-    
-    return (statesWithExternalDeps.size / states.length) * 100;
+    if (totalActions === 0) return 0;
+    return ((httpActions.length + scriptActions.length) / totalActions) * 100;
   }
 
   /**
    * Maintainability Score: Based on documentation and naming
    */
   private calculateMaintainabilityScore(): number {
-    const states = this.flowData.states;
-    if (states.length === 0) return 100;
+    if (this.metrics.totalStates === 0) return 100;
     
-    const allActions = this.getAllActions();
+    const allActions = Array.from(this.metrics.actionsByType.values()).flat();
     
     // Actions with titles
     const actionsWithTitles = allActions.filter(action => 
@@ -189,12 +152,12 @@ export class KPICalculator {
     ).length;
     
     // States with tags
-    const statesWithTags = states.filter(state => 
+    const statesWithTags = this.metrics.rootStates.filter(state => 
       state.$tags && state.$tags.length > 0
     ).length;
     
     const titleScore = allActions.length > 0 ? actionsWithTitles / allActions.length : 1;
-    const tagScore = statesWithTags / states.length;
+    const tagScore = statesWithTags / this.metrics.totalStates;
     
     return ((titleScore + tagScore) / 2) * 100;
   }
@@ -203,16 +166,13 @@ export class KPICalculator {
    * Branching Factor: Average number of outputs per state
    */
   private calculateBranchingFactor(): number {
-    const states = this.flowData.states;
-    if (states.length === 0) return 0;
+    if (this.metrics.totalStates === 0) return 0;
     
-    const totalOutputs = states.reduce((sum, state) => {
-      const outputs = state.outputs?.length || 0;
-      const defaultOutput = state.defaultOutput ? 1 : 0;
-      return sum + outputs + defaultOutput;
-    }, 0);
+    const totalConnections = Array.from(this.metrics.stateConnections.values()).reduce(
+      (sum, connections) => sum + connections.length, 0
+    );
     
-    return totalOutputs / states.length;
+    return totalConnections / this.metrics.totalStates;
   }
 
   /**
