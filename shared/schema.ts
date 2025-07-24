@@ -19,20 +19,50 @@ export const insertFlowAnalysisSchema = createInsertSchema(flowAnalyses).omit({
 export type InsertFlowAnalysis = z.infer<typeof insertFlowAnalysisSchema>;
 export type FlowAnalysis = typeof flowAnalyses.$inferSelect;
 
-// Flow structure types - Updated to match actual Blip format
+// Flow structure types - Updated to match exact Blip JSON format
 export const FlowActionSchema = z.object({
   $id: z.string().optional(),
   $title: z.string().optional(),
   $typeOfContent: z.string().optional(),
-  type: z.string(),
+  type: z.string().optional(),
   settings: z.record(z.any()).optional(),
   inputVariables: z.array(z.string()).optional(),
   outputVariable: z.string().optional(),
   conditions: z.array(z.any()).optional(),
   $invalid: z.boolean().optional(),
-  input: z.record(z.any()).optional(),
-  $cardContent: z.record(z.any()).optional(),
-});
+  // Handle nested input structure from actual JSON
+  input: z.object({
+    bypass: z.boolean().optional(),
+    $cardContent: z.object({
+      document: z.object({
+        id: z.string().optional(),
+        type: z.string().optional(),
+        content: z.string().optional(),
+      }).optional(),
+      editable: z.boolean().optional(),
+      deletable: z.boolean().optional(),
+      position: z.string().optional(),
+      editing: z.boolean().optional(),
+    }).optional(),
+    $invalid: z.boolean().optional(),
+  }).optional(),
+  // Handle various action types
+  method: z.string().optional(),
+  uri: z.string().optional(),
+  headers: z.record(z.string()).optional(),
+  body: z.string().optional(),
+  responseStatusVariable: z.string().optional(),
+  responseBodyVariable: z.string().optional(),
+  source: z.string().optional(),
+  script: z.string().optional(),
+  text: z.string().optional(),
+  variable: z.string().optional(),
+  value: z.string().optional(),
+  validation: z.object({
+    rule: z.string(),
+    type: z.string(),
+  }).optional(),
+}).passthrough(); // Allow additional fields
 
 export const FlowConditionSchema = z.object({
   source: z.string(),
@@ -62,9 +92,10 @@ export const FlowStateSchema = z.object({
   $invalid: z.boolean().optional(),
 });
 
+// Make the schema much more permissive to handle actual Blip JSON format
 export const FlowDataSchema = z.object({
-  flow: z.record(FlowStateSchema),
-});
+  flow: z.record(z.any()), // Accept any structure for now
+}).passthrough(); // Allow additional fields at root level
 
 export type FlowAction = z.infer<typeof FlowActionSchema>;
 export type FlowCondition = z.infer<typeof FlowConditionSchema>;

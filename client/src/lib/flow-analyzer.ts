@@ -385,8 +385,8 @@ export class FlowAnalyzer {
    * Estimates the number of logical clusters in the flow
    */
   public estimateClusters(): number {
-    const states = this.flowData.states;
-    const connections = this.buildConnectionMap(states);
+    const states = this.normalizedStates;
+    const connections = this.buildConnectionMap();
     
     // Simple clustering based on connection density
     // In a real implementation, this would use graph clustering algorithms
@@ -408,7 +408,7 @@ export class FlowAnalyzer {
       }
     };
     
-    states.forEach(state => {
+    states.forEach((state: any) => {
       if (!visited.has(state.$id)) {
         dfs(state.$id, state.$id);
       }
@@ -421,8 +421,8 @@ export class FlowAnalyzer {
    * Analyzes branching factor (average number of outputs per state)
    */
   public calculateBranchingFactor(): number {
-    const states = this.flowData.states;
-    const totalOutputs = states.reduce((sum, state) => {
+    const states = this.normalizedStates;
+    const totalOutputs = states.reduce((sum: any, state: any) => {
       return sum + (state.outputs?.length || 0) + (state.defaultOutput ? 1 : 0);
     }, 0);
     
@@ -433,7 +433,7 @@ export class FlowAnalyzer {
    * Calculates dynamic content rate
    */
   public calculateDynamicContentRate(): number {
-    const actionsByType = this.categorizeActions(this.flowData.states);
+    const actionsByType = this.categorizeActions();
     const sendMessageActions = actionsByType.get("SendMessage") || [];
     
     if (sendMessageActions.length === 0) return 0;

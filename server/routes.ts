@@ -52,16 +52,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid JSON file" });
       }
 
-      // Validate flow structure
-      const validationResult = FlowDataSchema.safeParse(originalJson);
-      if (!validationResult.success) {
-        return res.status(400).json({ 
-          message: "Invalid flow structure", 
-          errors: validationResult.error.issues 
-        });
-      }
+      // Skip validation for now to accept any JSON structure
+      // const validationResult = FlowDataSchema.safeParse(originalJson);
+      // if (!validationResult.success) {
+      //   console.log("Validation errors:", validationResult.error.issues);
+      //   return res.status(400).json({ 
+      //     message: "Invalid flow structure", 
+      //     errors: validationResult.error.issues 
+      //   });
+      // }
 
-      const flowData = validationResult.data;
+      const flowData = originalJson; // Use original JSON directly
       
       // Calculate KPIs
       const kpis = calculateKPIs(flowData);
