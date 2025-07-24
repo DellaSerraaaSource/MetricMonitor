@@ -1,0 +1,108 @@
+# KPIs para Dashboard de Análise de Fluxo (Versão Refinada)
+
+Esta é uma versão refinada dos KPIs, baseada em uma análise granular da estrutura JSON. O foco muda de simples contagens para métricas de **qualidade, saúde, complexidade, manutenibilidade e experiência do usuário (UX)**.
+
+---
+
+## Funcionalidade Essencial: Visão 360º do Bloco
+
+Para permitir uma análise granular e depuração eficiente, o dashboard deve incluir uma seção de "Explorador de Estados". Esta funcionalidade permitirá ao usuário selecionar qualquer bloco (estado) pelo seu ID e visualizar um resumo completo e organizado de tudo o que acontece dentro dele.
+
+**A visão deve detalhar os seguintes componentes:**
+
+### 1. Ações de Entrada (Entering Actions)
+- **O que é:** Lista todas as ações customizadas executadas **quando se entra** no bloco.
+- **Como visualizar:** Para cada ação, exibir seu **Título (`$title`)**, **Tipo (`type`)** e um expansor para ver o JSON completo com todos os detalhes.
+
+### 2. Ações de Conteúdo (Content Actions)
+- **O que é:** Lista todas as mensagens, perguntas e inputs que são apresentados ao usuário a partir deste bloco.
+- **Como visualizar:** Para cada ação, exibir seu **Título**, **Tipo (`SendMessage`, `Input`)** e detalhes importantes (e.g., variável onde o input é salvo). Incluir um expansor para o JSON completo.
+
+### 3. Ações de Saída (Leaving Actions)
+- **O que é:** Lista todas as ações customizadas executadas **quando se sai** do bloco, antes de transicionar para o próximo.
+- **Como visualizar:** Estrutura idêntica à das Ações de Entrada, mostrando **Título**, **Tipo** e detalhes no JSON.
+
+### 4. Condições de Saída (Outputs)
+- **O que é:** Mostra todas as regras de negócio que determinam o próximo passo no fluxo.
+- **Como visualizar:** Para cada saída possível, mostrar:
+    - O **Bloco de Destino** (`stateId`).
+    - As regras em formato legível: `SE [fonte].[variável] [comparação] [valores]`.
+    - Exemplo: `SE context.isWorkTime equals [true]`.
+
+### 5. Saída Padrão (Default Output)
+- **O que é:** O caminho de fallback caso nenhuma das condições de saída seja atendida.
+- **Como visualizar:** Indicar claramente qual é o **Bloco de Destino** padrão.
+
+---
+
+## 🎯 KPIs Globais e Estratégicos
+
+KPIs que medem a arquitetura e a estratégia geral do fluxo.
+
+1.  **Índice de Saúde do Fluxo (Flow Health Score):**
+    - **Métrica:** `1 - (Componentes Inválidos / Total de Componentes)`. Um único score de 0 a 1.
+    - **Por que é importante?** Fornece uma visão instantânea e de alto nível da estabilidade técnica do fluxo. Ideal para acompanhamento contínuo.
+
+2.  **Índice de Complexidade do Fluxo (Flow Complexity Index):
+    - **Métrica:** Uma pontuação ponderada: `(Contagem de Estados * 0.4) + (Média de Condições por Estado * 0.3) + (Taxa de Ações Customizadas * 0.3)`.
+    - **Por que é importante?** Mede quão difícil é entender e manter o fluxo. Um número alto sugere a necessidade de refatoração ou modularização.
+
+3.  **Índice de Dependência Externa (External Dependency Index):
+    - **Métrica:** Percentual de estados que contêm ações `ProcessHttp` ou `ExecuteScript`.
+    - **Por que é importante?** Quantifica o quão acoplado o bot está a sistemas externos, o que é um indicador de risco (se os sistemas falharem) e de poder (se as integrações forem ricas).
+
+4.  **Nível de Ramificação (Branching Factor):
+    - **Métrica:** Média de saídas (`conditionOutputs`) por estado. 
+    - **Por que é importante?** Um valor alto indica lógica de decisão complexa, que pode ser difícil de testar e depurar.
+
+5.  **Índice de Manutenibilidade (Maintainability Score):
+    - **Métrica:** Percentual de ações customizadas (`$id`) que possuem um `$title` descritivo e percentual de estados que possuem `tags` associadas.
+    - **Por que é importante?** Mede o quão fácil é para um novo desenvolvedor entender o que cada parte do fluxo faz sem precisar ler todo o código/JSON.
+
+6.  **Coesão do Fluxo (Flow Cohesion):
+    - **Métrica:** Análise de cluster (usando `position.json`) para identificar grupos de estados fortemente conectados entre si, mas fracamente conectados a outros grupos. O KPI é o número de clusters identificados.
+    - **Por que é importante?** Ajuda a identificar "sub-fluxos" que poderiam ser extraídos em módulos separados, melhorando a organização.
+
+7.  **Taxa de Conteúdo Dinâmico (Dynamic Content Rate):
+    - **Métrica:** Percentual de ações `SendMessage` cujo `content` ou `rawContent` contém variáveis (`{{...}}`).
+    - **Por que é importante?** Mede o nível de personalização das interações do bot. Um valor baixo pode indicar um bot muito estático.
+
+8.  **Potencial de "Código Morto" (Dead Code Potential):
+    - **Métrica:** Contagem de estados que não são alcançáveis a partir de nenhum estado raiz (`is_root`). Requer análise de grafo.
+    - **Por que é importante?** Identifica lógica inútil que polui o fluxo e aumenta a complexidade sem agregar valor.
+
+---
+
+## ⚙️ KPIs por Tipo de Ação (Foco em Qualidade)
+
+### 1. Ação: `ProcessHttp` (Chamadas de API)
+
+1.  **Saúde da Integração (Integration Health):** % de ações `ProcessHttp` que salvam o status da resposta (`responseStatusVariable`) E possuem lógica condicional subsequente para tratar códigos de erro (e.g., 4xx, 5xx).
+2.  **Diversidade de Endpoints:** Contagem de `settings.uri` únicos. Ajuda a entender se o bot depende de um monolito ou de microsserviços.
+3.  **Segurança da Requisição:** % de chamadas que utilizam um header de `Authorization`.
+4.  **Taxa de Reutilização de API:** Média de vezes que cada `settings.uri` único é chamado. APIs muito reutilizadas são críticas.
+5.  **Risco de Performance:** Contagem de chamadas `ProcessHttp` que **não** são seguidas por uma ação assíncrona (e.g., `chatstate`), indicando que o usuário pode ficar esperando.
+
+### 2. Ação: `ExecuteScript` (Scripts Customizados)
+
+1.  **Risco do Script (Script Risk Score):** Pontuação baseada na complexidade (linhas de código em `settings.source`), ausência de `inputVariables` (sugere efeitos colaterais) e ausência de `outputVariable` (sugere que o script faz algo "escondido").
+2.  **Taxa de Código Morto em Scripts:** % de scripts cujo `outputVariable` é definido mas nunca utilizado em ações ou condições futuras.
+3.  **Taxa de Acoplamento de Scripts:** % de scripts que dependem de mais de N `inputVariables`. Scripts muito acoplados são difíceis de reutilizar.
+4.  **Taxa de Código Duplicado:** % de ações `ExecuteScript` cujo `settings.source` é idêntico ou tem alta similaridade com outro.
+5.  **Padrão de Nomenclatura:** Consistência na nomenclatura de `inputVariables` e `outputVariable` (e.g., camelCase, prefixos `in_`/`out_`).
+
+### 3. Ações de Interação: `SendMessage` e `Input`
+
+1.  **Índice de Riqueza da Interação (Interaction Richness Score):** Pontuação que aumenta com o uso de conteúdo interativo (`application/vnd.lime.select+json`), `inputSuggestions`, e `$cardContent` complexo.
+2.  **Robustez do Input do Usuário:** % de blocos de `input` que possuem uma regra de `validation` definida. Mede a qualidade do tratamento de entradas do usuário.
+3.  **Clareza da Navegação:** Para menus (`select+json`), a média de opções oferecidas. Muitas opções podem confundir; poucas podem limitar.
+4.  **Taxa de "Becos sem Saída":** % de estados de `input` que não têm uma saída padrão (`defaultOutput`) para tratar respostas inesperadas do usuário.
+5.  **Consistência da Experiência:** Variação no número e tipo de `inputSuggestions` oferecidas ao longo do fluxo. Uma experiência consistente é preferível.
+
+### 4. Ações de Gerenciamento de Estado: `SetVariable` e Condições
+
+1.  **Taxa de Variáveis Órfãs (Orphan Variable Rate):** % de variáveis definidas com `SetVariable` que nunca são lidas (usadas em `conditions`, `SendMessage` ou `ProcessHttp`). Indica desperdício e lógica morta.
+2.  **Ciclo de Vida da Variável (Variable Lifecycle):** Distância média (em nº de estados) entre a definição (`SetVariable`) e o último uso de uma variável. Variáveis de vida longa aumentam a complexidade.
+3.  **Complexidade da Condição:** Média de sub-condições (`conditions` array) por bloco de saída. Saídas com muitas sub-condições são complexas.
+4.  **Fonte da Verdade (Source of Truth):** Distribuição da `source` nas condições (`input` vs. `context`). Mostra se o fluxo é mais reativo à entrada do usuário ou ao estado interno.
+5.  **Taxa de Variáveis "Mágicas":** % de variáveis lidas no `context` que não foram previamente definidas por um `SetVariable`, `ExecuteScript` ou `ProcessHttp`. Indica dependência de um contexto externo e não gerenciado pelo fluxo.
