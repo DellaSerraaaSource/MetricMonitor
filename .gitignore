@@ -1,6 +1,45 @@
-node_modules
-dist
+# Dependências
+node_modules/
+
+# Build artifacts
+dist/
+build/ # Adicionado: Outro diretório comum de build
+*.tsbuildinfo # Adicionado: Arquivos de informações de build do TypeScript
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log # Adicionado: Arquivos de log genéricos
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Sistema Operacional
 .DS_Store
+
+# IDEs e Editores
+.vscode/ # Adicionado: Configurações do VS Code (opcional, mas comum)
+.idea/ # Adicionado: Configurações do IntelliJ IDEA
+
+# Arquivos temporários
+tmp/ # Adicionado: Diretório temporário
+temp/ # Adicionado: Outro diretório temporário
+*.tmp
+*.bak
+*.swp
+
+# Arquivos de cache
+.cache/ # Adicionado: Diretórios de cache
+
+# Arquivos de teste
+coverage/ # Adicionado: Relatórios de cobertura de teste
+
+# Arquivos de configuração específicos do projeto (já existentes)
 server/public
 vite.config.ts.*
 *.tar.gz
