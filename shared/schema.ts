@@ -17,6 +17,7 @@ export const insertFlowAnalysisSchema = createInsertSchema(flowAnalyses).omit({
 });
 
 export type InsertFlowAnalysis = z.infer<typeof insertFlowAnalysisSchema>;
+
 export type FlowAnalysis = typeof flowAnalyses.$inferSelect;
 
 // Flow structure types - Updated to match exact Blip JSON format
@@ -114,12 +115,12 @@ export const KPIMetricsSchema = z.object({
   flowCohesion: z.number(),
   dynamicContentRate: z.number(),
   deadCodePotential: z.number(),
-  
+
   // Structure metrics
   totalStates: z.number(),
   orphanStates: z.number(),
   clusters: z.number(),
-  
+
   // Action-specific metrics
   httpActions: z.object({
     count: z.number(),
@@ -129,7 +130,7 @@ export const KPIMetricsSchema = z.object({
     reutilizationRate: z.number(),
     performanceRisk: z.number(),
   }),
-  
+
   scriptActions: z.object({
     count: z.number(),
     averageRiskScore: z.number(),
@@ -138,7 +139,7 @@ export const KPIMetricsSchema = z.object({
     duplicatedCodeRate: z.number(),
     namingConsistency: z.number(),
   }),
-  
+
   interactionActions: z.object({
     count: z.number(),
     richnessScore: z.number(),
@@ -147,7 +148,7 @@ export const KPIMetricsSchema = z.object({
     deadEndsRate: z.number(),
     consistencyScore: z.number(),
   }),
-  
+
   variableActions: z.object({
     count: z.number(),
     orphanRate: z.number(),
