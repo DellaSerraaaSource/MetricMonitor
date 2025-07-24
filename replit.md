@@ -7,6 +7,7 @@ FlowAnalyzer is a comprehensive web application for analyzing and visualizing JS
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Responsiveness: Mobile-first design with adaptive layouts for all screen sizes.
 
 ## System Architecture
 
@@ -41,7 +42,12 @@ Preferred communication style: Simple, everyday language.
 ### Dashboard Interface
 - **Multi-tab Layout**: Organized into Overview, Explorer, Actions, Dependencies, and Reports sections
 - **Interactive Components**: File upload with drag-and-drop, searchable state explorer, and expandable action details
-- **Responsive Design**: Mobile-friendly interface with adaptive layouts
+- **Responsive Design**: Mobile-first design with:
+  - Horizontal navigation on mobile/tablet, vertical on desktop
+  - Adaptive grid layouts (1 column on mobile, 2 on tablet, 4 on desktop)
+  - Compact spacing and typography on smaller screens
+  - Touch-friendly button sizes and interactions
+  - Responsive sidebar that transforms from horizontal to vertical layout
 
 ### Storage Abstraction
 - **Interface-based Design**: IStorage interface allows switching between memory and database storage

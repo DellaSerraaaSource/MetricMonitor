@@ -60,57 +60,80 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      <Sidebar 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab}
-        analyses={analyses}
-        currentAnalysis={currentAnalysis}
-        onAnalysisSelect={setCurrentAnalysis}
-      />
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gray-50">
+      {/* Mobile/Tablet sidebar - hidden on desktop */}
+      <div className="lg:hidden">
+        <Sidebar 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab}
+          analyses={analyses}
+          currentAnalysis={currentAnalysis}
+          onAnalysisSelect={setCurrentAnalysis}
+        />
+      </div>
+
+      {/* Desktop sidebar - hidden on mobile/tablet */}
+      <div className="hidden lg:block">
+        <Sidebar 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab}
+          analyses={analyses}
+          currentAnalysis={currentAnalysis}
+          onAnalysisSelect={setCurrentAnalysis}
+        />
+      </div>
       
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">{getTabTitle()}</h2>
-              <p className="text-sm text-gray-500 mt-1">
+        <header className="bg-white shadow-sm border-b border-gray-200 px-4 lg:px-6 py-3 lg:py-4">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-xl lg:text-2xl font-bold text-gray-900 truncate">{getTabTitle()}</h2>
+              <p className="text-sm text-gray-500 mt-1 truncate">
                 {currentAnalysis ? currentAnalysis.name : "Nenhum fluxo carregado"}
               </p>
             </div>
-            <div className="flex items-center space-x-4">
-              <Button 
-                onClick={() => setIsUploadModalOpen(true)}
-                className="bg-primary hover:bg-primary/90"
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                Carregar Fluxo
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={handleExport}
-                disabled={!currentAnalysis}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Exportar
-              </Button>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+              <div className="relative order-last sm:order-first">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   type="text"
                   placeholder="Buscar..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
+                  className="pl-10 w-full sm:w-48 lg:w-64"
                 />
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => setIsUploadModalOpen(true)}
+                  className="bg-primary hover:bg-primary/90 flex-1 sm:flex-none"
+                  size="sm"
+                >
+                  <Upload className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Carregar Fluxo</span>
+                  <span className="sm:hidden">Upload</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleExport}
+                  disabled={!currentAnalysis}
+                  className="flex-1 sm:flex-none"
+                  size="sm"
+                >
+                  <Download className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Exportar</span>
+                  <span className="sm:hidden">Export</span>
+                </Button>
               </div>
             </div>
           </div>
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-4 lg:p-6">
           {activeTab === "overview" && (
             <OverviewTab 
               analysis={currentAnalysis} 

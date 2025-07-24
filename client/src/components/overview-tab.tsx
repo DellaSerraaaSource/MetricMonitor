@@ -51,24 +51,24 @@ export function OverviewTab({ analysis, onUploadClick }: OverviewTabProps) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 lg:space-y-8">
       {/* Global KPIs Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-gray-700">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="pt-4 lg:pt-6">
+            <div className="flex items-center justify-between mb-3 lg:mb-4">
+              <h3 className="text-xs lg:text-sm font-medium text-gray-700 truncate">
                 Índice de Saúde do Fluxo
               </h3>
-              <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+              <div className="w-2 h-2 lg:w-3 lg:h-3 bg-emerald-500 rounded-full flex-shrink-0"></div>
             </div>
             <div className="flex items-center">
-              <span className="text-3xl font-bold text-emerald-600">
+              <span className="text-2xl lg:text-3xl font-bold text-emerald-600">
                 {formatScore(kpis.healthScore, 1)}
               </span>
             </div>
-            <Progress value={kpis.healthScore * 100} className="mt-3" />
-            <p className="text-xs text-gray-500 mt-2">
+            <Progress value={kpis.healthScore * 100} className="mt-2 lg:mt-3" />
+            <p className="text-xs text-gray-500 mt-1 lg:mt-2">
               {kpis.healthScore > 0.8 ? "Excelente saúde" : 
                kpis.healthScore > 0.6 ? "Boa saúde" : "Necessita atenção"}
             </p>

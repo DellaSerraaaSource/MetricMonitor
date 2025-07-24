@@ -26,36 +26,39 @@ export function Sidebar({
   ];
 
   return (
-    <div className="w-64 bg-white shadow-lg border-r border-gray-200 flex flex-col">
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 flow-analyzer-brand rounded-lg flex items-center justify-center">
-            <Activity className="text-white text-lg" />
+    <div className="w-full lg:w-64 bg-white shadow-lg border-r border-gray-200 flex flex-col lg:h-screen">
+      {/* Header - Compact on mobile */}
+      <div className="p-3 lg:p-6 border-b border-gray-200">
+        <div className="flex items-center space-x-2 lg:space-x-3">
+          <div className="w-8 h-8 lg:w-10 lg:h-10 flow-analyzer-brand rounded-lg flex items-center justify-center">
+            <Activity className="text-white text-sm lg:text-lg h-4 w-4 lg:h-5 lg:w-5" />
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">FlowAnalyzer</h1>
-            <p className="text-sm text-gray-500">Dashboard de Análise</p>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg lg:text-xl font-bold text-gray-900 truncate">FlowAnalyzer</h1>
+            <p className="text-xs lg:text-sm text-gray-500 hidden sm:block lg:block">Dashboard de Análise</p>
           </div>
         </div>
       </div>
       
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
+      {/* Navigation - Horizontal on mobile, vertical on desktop */}
+      <nav className="flex-1 p-2 lg:p-4">
+        <ul className="flex lg:flex-col space-x-1 lg:space-x-0 lg:space-y-2 overflow-x-auto lg:overflow-x-visible">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
-              <li key={tab.id}>
+              <li key={tab.id} className="flex-shrink-0 lg:flex-shrink">
                 <button
                   onClick={() => onTabChange(tab.id)}
                   className={cn(
-                    "w-full flex items-center px-4 py-3 rounded-lg font-medium transition-colors text-left",
+                    "flex items-center px-3 lg:px-4 py-2 lg:py-3 rounded-lg font-medium transition-colors text-left whitespace-nowrap lg:w-full",
                     activeTab === tab.id 
                       ? "text-primary bg-blue-50" 
                       : "text-gray-700 hover:bg-gray-100"
                   )}
                 >
-                  <Icon className="mr-3 h-5 w-5" />
-                  {tab.label}
+                  <Icon className="h-4 w-4 lg:h-5 lg:w-5 lg:mr-3" />
+                  <span className="hidden lg:inline ml-2 lg:ml-0">{tab.label}</span>
+                  <span className="lg:hidden text-xs ml-1">{tab.label.split(' ')[0]}</span>
                 </button>
               </li>
             );

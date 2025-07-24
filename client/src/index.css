@@ -65,7 +65,7 @@
 }
 
 .metric-card {
-  @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6 transition-all duration-200 hover:shadow-md;
+  @apply bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6 transition-all duration-200 hover:shadow-md;
 }
 
 .progress-bar {
@@ -138,4 +138,36 @@
 
 .upload-dropzone.dragover {
   @apply border-primary bg-blue-50;
+}
+
+/* Mobile-friendly scrollbars */
+@media (max-width: 1024px) {
+  .overflow-x-auto::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 2px;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 2px;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+}
+
+/* Additional responsive improvements */
+@media (max-width: 640px) {
+  .expandable-content {
+    @apply p-4 bg-white border-t border-gray-200;
+  }
+  
+  .expandable-header {
+    @apply p-3 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors flex items-center justify-between;
+  }
 }
